@@ -163,13 +163,13 @@ def init_config():
         logging.error("Invalid Auth service specified! ('ptc' or 'google')")
         return None
 
-    if not (config.location or config.location_cache):
+    if config.location is None and config.location_cache is None:
         parser.error("Needs either --use-location-cache or --location.")
         return None
 
-    if not config.username:
+    if config.username is None:
         config.username = raw_input("Username: ")
-    if not config.password:
+    if config.password is None:
         config.password = getpass("Password: ")
 
     return config
