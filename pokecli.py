@@ -45,6 +45,16 @@ if sys.version_info >= (2, 7, 9):
 
 
 def init_config():
+    default_config = {
+        "mode": "all",
+        "walk": 2.5,
+        "cp": 100,
+        "pokemon_potential": 0.40,
+        "max_steps": 50,
+        "distance_unit": "km",
+        "ign_init_trans": "km"
+    }
+
     parser = argparse.ArgumentParser()
 
     # Read passed in Arguments
@@ -52,7 +62,6 @@ def init_config():
                         "--config-json",
                         help="Load a config JSON file. Overrides all other command line options if specified.",
                         type=str,
-                        default=None,
                         dest="json")
     parser.add_argument("-a",
                         "--auth-service",
@@ -70,41 +79,35 @@ def init_config():
                         "--mode",
                         help="Farming Mode",
                         type=str,
-                        default="all",
                         dest="mode")
     parser.add_argument(
         "-w",
         "--walk",
         help="Walk instead of teleport with given speed (meters per second, e.g. 2.5)",
         type=float,
-        default=2.5,
         dest="walk")
     parser.add_argument("-cp",
                         "--combat-power",
                         "--combat-points",
                         help="Transfer Pokemon that have CP less than this value (default 100)",
                         type=int,
-                        default=100,
                         dest="cp")
     parser.add_argument(
         "-iv",
         "--pokemon-potential",
         help="Transfer Pokemon that have an IV ratio less than this value (default 0.40)",
         type=float,
-        default=0.40,
         dest="pokemon_potential")
     parser.add_argument("-k",
                         "--gmapkey",
                         help="Set Google Maps API KEY",
                         type=str,
-                        default=None,
                         dest="gmapkey")
     parser.add_argument(
         "-ms",
         "--max-steps",
         help="Set the steps around your initial location(DEFAULT 5 mean 25 cells around your location)",
         type=int,
-        default=50,
         dest="max_steps")
     parser.add_argument(
         "-it",
@@ -127,14 +130,12 @@ def init_config():
         "--distance-unit",
         help="Set the unit to display distance in (e.g, km for kilometers, mi for miles, ft for feet)",
         type=str,
-        default="km",
         dest="distance_unit")
 
     parser.add_argument(
         "-ign",
         "--ign-init-trans",
         type=str,
-        default='',
         dest="ign_init_trans")
 
     config = parser.parse_args()
@@ -142,28 +143,36 @@ def init_config():
     if config.json:
         try:
             # attempt to load values from JSON, overwriting any existing values
+            loaded_config = {}
             with open(config.json) as data:
-                config.__dict__.update(json.load(data))
-            return config
+                loaded_config.update(json.load(data))
+            for key in config.__dict__:
+                if config.__dict__.get(key) is None and loaded_config.get(key) is not None:
+                    config.__dict__[key] = loaded_config.get(key)
         except Exception as e:
             logging.error("Error loading {}.".format(config.json))
             return None
-    else:
-        # No JSON file specified, stick with command line args
-        if config.auth_service not in ['ptc', 'google']:
-            logging.error("Invalid Auth service specified! ('ptc' or 'google')")
-            return None
 
-        if not (config.location or config.location_cache):
-            parser.error("Needs either --use-location-cache or --location.")
-            return None
+    for key in config.__dict__:
+        if config.__dict__.get(key) is None and default_config.get(key) is not None:
+            config.__dict__[key] = default_config.get(key)
 
-        if not config.username:
-            config.username = raw_input("Username: ")
-        if not config.password:
-            config.password = getpass("Password: ")
+    print(config.__dict__)
 
-        return config
+    if config.auth_service not in ['ptc', 'google']:
+        logging.error("Invalid Auth service specified! ('ptc' or 'google')")
+        return None
+
+    if not (config.location or config.location_cache):
+        parser.error("Needs either --use-location-cache or --location.")
+        return None
+
+    if not config.username:
+        config.username = raw_input("Username: ")
+    if not config.password:
+        config.password = getpass("Password: ")
+
+    return config
 
 
 def main():
