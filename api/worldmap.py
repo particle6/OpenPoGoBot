@@ -8,7 +8,8 @@ from api.json_encodable import JSONEncodable
 class Fort(JSONEncodable):
     def __init__(self, data):
         self.fort_id = data.get("id", "")
-        self.fort_name = str(data.get("name")) if "name" in data else None
+        self.fort_name = data.get("name", "Unknown").encode('ascii', 'replace')
+                            # TODO: Make this proper unicode  ^^
         self.latitude = data.get("latitude", None)
         self.longitude = data.get("longitude", None)
         self.enabled = data.get("enabled", True)
